@@ -30,7 +30,7 @@ int main() {
             char username[50], role[10];
             if (login_user(username, role)) {
                 start_session(username, role);
-                auto_logout(username, role, 30);
+                auto_logout(username, role, 120);
                 virtual_shell(username, role);
                 end_session(username, role);
             } else {
