@@ -1,0 +1,36 @@
+[Sun Aug 31 17:37:00 2025] Session START | User: Shivanshu | Role: admin
+[Sun Aug 31 17:37:09 2025] Session END   | User: Shivanshu | Role: admin | Duration: 9 sec
+[Sun Aug 31 18:13:29 2025] Session START | User: Shivanshu | Role: admin
+[Sun Aug 31 18:18:33 2025] Session TIMEOUT | User: Shivanshu | Role: admin | Duration: 304 sec
+[Tue Sep  9 09:37:02 2025] Session START | User: Shivanshu | Role: admin
+[Tue Sep  9 09:37:16 2025] Session END   | User: Shivanshu | Role: admin | Duration: 14 sec
+[Fri Sep 19 20:28:29 2025] Session START | User: Shivanshu | Role: admin
+[Fri Sep 19 20:28:35 2025] Session END   | User: Shivanshu | Role: admin | Duration: 6 sec
+[Fri Sep 19 20:29:01 2025] Session START | User: Bingo | Role: guest
+[Fri Sep 19 20:33:40 2025] Session END   | User: Bingo | Role: guest | Duration: 279 sec
+[Fri Sep 19 20:39:34 2025] Session START | User: Shivanshu | Role: admin
+[Fri Sep 19 20:50:58 2025] Session START | User: Shivanshu | Role: admin
+[Fri Sep 19 20:51:49 2025] Session START | User: Shivanshu | Role: admin
+[Fri Sep 19 20:52:30 2025] Session START | User: Shivanshu | Role: admin
+[Fri Sep 19 20:53:35 2025] Session END   | User: Shivanshu | Role: admin | Duration: 65 sec
+[Fri Sep 19 21:07:43 2025] Session START | User: Shivanshu | Role: admin
+[Fri Sep 19 21:14:55 2025] Session START | User: Shivanshu | Role: admin
+[Fri Sep 19 21:16:32 2025] Session START | User: Shivanshu | Role: admin
+[Fri Sep 19 21:21:34 2025] Session TIMEOUT | User: Shivanshu | Role: admin | Duration: 302 sec
+[Thu Sep 25 21:09:51 2025] Session START | User: Abhinav | Role: user
+[Thu Sep 25 21:10:50 2025] Session END   | User: Abhinav | Role: user | Duration: 59 sec
+[Thu Sep 25 21:36:19 2025] Session START | User: Abhinav | Role: user
+[Thu Sep 25 21:42:19 2025] Session START | User: Abhinav | Role: user
+[Thu Sep 25 21:42:52 2025] Session END   | User: Abhinav | Role: user | Duration: 33 sec
+[Thu Sep 25 21:44:51 2025] Session START | User: Flying | Role: guest
+[Thu Sep 25 21:45:20 2025] Session END   | User: Flying | Role: guest | Duration: 29 sec
+[Thu Sep 25 21:46:02 2025] Session START | User: Shivanshu | Role: admin
+[Thu Sep 25 21:46:54 2025] Session END   | User: Shivanshu | Role: admin | Duration: 52 sec
+[Thu Sep 25 21:52:34 2025] Session START | User: Penguin | Role: admin
+[Thu Sep 25 21:53:40 2025] Session END   | User: Penguin | Role: admin | Duration: 66 sec
+[Thu Sep 25 21:54:12 2025] Session START | User: Penguin | Role: admin
+[Thu Sep 25 21:54:15 2025] Session END   | User: Penguin | Role: admin | Duration: 3 sec
+[Thu Sep 25 21:56:40 2025] Session START | User: Penguin | Role: admin
+[Thu Sep 25 21:56:42 2025] Session END   | User: Penguin | Role: admin | Duration: 2 sec
+[Thu Sep 25 22:09:15 2025] Session START | User: Same | Role: guest
+[Thu Sep 25 22:09:17 2025] Session END   | User: Same | Role: guest | Duration: 2 sec
