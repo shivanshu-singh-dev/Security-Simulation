@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+#include "shell.h"
 #include "auth.h"
 #include "operations.h"
 #include "session.h"
@@ -28,8 +30,8 @@ int main() {
             char username[50], role[10];
             if (login_user(username, role)) {
                 start_session(username, role);
-                auto_logout(username, role, 180);
-                operations_window(username, role);
+                auto_logout(username, role, 30);
+                virtual_shell(username, role);
                 end_session(username, role);
             } else {
                 printf("Login failed.\n");

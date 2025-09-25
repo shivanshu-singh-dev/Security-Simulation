@@ -34,3 +34,14 @@
 [Thu Sep 25 21:56:42 2025] Session END   | User: Penguin | Role: admin | Duration: 2 sec
 [Thu Sep 25 22:09:15 2025] Session START | User: Same | Role: guest
 [Thu Sep 25 22:09:17 2025] Session END   | User: Same | Role: guest | Duration: 2 sec
+[Thu Sep 25 22:56:28 2025] Session START | User: Same | Role: guest
+[Thu Sep 25 22:57:38 2025] Session END   | User: Same | Role: guest | Duration: 70 sec
+[Thu Sep 25 22:58:29 2025] Session START | User: Shivanshu | Role: admin
+[Thu Sep 25 22:59:51 2025] Session END   | User: Shivanshu | Role: admin | Duration: 82 sec
+[Thu Sep 25 23:02:15 2025] Session START | User: Shivanshu | Role: admin
+[Thu Sep 25 23:12:34 2025] Session START | User: Shivanshu | Role: admin
+[Thu Sep 25 23:13:41 2025] Session END   | User: Shivanshu | Role: admin | Duration: 67 sec
+[Thu Sep 25 23:19:32 2025] Session START | User: Same | Role: guest
+[Thu Sep 25 23:24:23 2025] Session START | User: Same | Role: guest
+[Thu Sep 25 23:24:53 2025] Session TIMEOUT | User: Same | Role: guest | Duration: 30 sec
+[Thu Sep 25 23:26:57 2025] Session START | User: Same | Role: guest

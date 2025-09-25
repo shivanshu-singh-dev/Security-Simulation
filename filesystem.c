@@ -8,6 +8,8 @@
 #include <string.h>
 #include <dirent.h>
 #include <time.h>
+
+#include "auth.h"
 #include "filesystem.h"
 
 // ---------- Role Permissions ----------
@@ -82,6 +84,7 @@ void filesystem_read(const char *role, const char *username) {
     printf("Choose a file number to read: ");
     int choice;
     scanf("%d", &choice);
+    flush_input();
 
     if (choice < 1 || choice > count) {
         printf("Invalid choice.\n");
@@ -148,6 +151,7 @@ void filesystem_write(const char *role, const char *username) {
     printf("Choose a file number to write: ");
     int choice;
     scanf("%d", &choice);
+    flush_input();
 
     if (choice < 1 || choice > count) {
         printf("Invalid choice.\n");
@@ -217,6 +221,7 @@ void filesystem_exec(const char *role, const char *username) {
     printf("Choose a file number to execute: ");
     int choice;
     scanf("%d", &choice);
+    flush_input();
 
     if (choice < 1 || choice > count) {
         printf("Invalid choice.\n");

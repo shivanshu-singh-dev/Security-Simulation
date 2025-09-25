@@ -82,3 +82,22 @@
 [Thu Sep 25 21:56:42 2025] User: Penguin | Role: admin | Action: Log Out | Result: Success
 [Thu Sep 25 22:09:15 2025] User: Same | Role: guest | Action: Login | Result: Success
 [Thu Sep 25 22:09:17 2025] User: Same | Role: guest | Action: Log Out | Result: Success
+[Thu Sep 25 22:56:28 2025] User: Same | Role: guest | Action: Login | Result: Success
+[Thu Sep 25 22:57:06 2025] User: Same | Role: guest | Action: Read | Result: Allowed
+[Thu Sep 25 22:57:32 2025] User: Same | Role: guest | Action: Write | Result: Denied
+[Thu Sep 25 22:57:38 2025] User: Same | Role: guest | Action: Shell Exit | Result: Success
+[Thu Sep 25 22:58:29 2025] User: Shivanshu | Role: admin | Action: Login | Result: Success
+[Thu Sep 25 22:58:45 2025] User: Shivanshu | Role: admin | Action: Execute | Result: Allowed
+[Thu Sep 25 22:58:58 2025] User: Shivanshu | Role: admin | Action: Read | Result: Allowed
+[Thu Sep 25 22:59:25 2025] User: Shivanshu | Role: admin | Action: Write | Result: Allowed
+[Thu Sep 25 22:59:51 2025] User: Shivanshu | Role: admin | Action: Shell Exit | Result: Success
+[Thu Sep 25 23:02:15 2025] User: Shivanshu | Role: admin | Action: Login | Result: Success
+[Thu Sep 25 23:02:21 2025] User: Shivanshu | Role: admin | Action: Execute | Result: Allowed
+[Thu Sep 25 23:12:34 2025] User: Shivanshu | Role: admin | Action: Login | Result: Success
+[Thu Sep 25 23:13:00 2025] User: Shivanshu | Role: admin | Action: Write | Result: Allowed
+[Thu Sep 25 23:13:33 2025] User: Shivanshu | Role: admin | Action: Read | Result: Allowed
+[Thu Sep 25 23:13:41 2025] User: Shivanshu | Role: admin | Action: Shell Exit | Result: Success
+[Thu Sep 25 23:19:32 2025] User: Same | Role: guest | Action: Login | Result: Success
+[Thu Sep 25 23:24:23 2025] User: Same | Role: guest | Action: Login | Result: Success
+[Thu Sep 25 23:24:53 2025] User: Same | Role: guest | Action: Auto Logout | Result: Session Timeout
+[Thu Sep 25 23:26:57 2025] User: Same | Role: guest | Action: Login | Result: Success
