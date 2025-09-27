@@ -57,3 +57,9 @@
 [Sat Sep 27 19:35:48 2025] Session END   | User: Shivanshu | Role: admin | Token: d580014d6690de388cf028759cce57b5307618d8970f33f9a19bede9440dcbec | Duration: 37 sec
 [Sat Sep 27 19:36:13 2025] Session START | User: Shivanshu | Role: admin | Token: 7bcdd762d7ba9101cc42430770b82beba4d8943c073bca7670f36ef350258aea
 [Sat Sep 27 19:36:53 2025] Session END   | User: Shivanshu | Role: admin | Token: 7bcdd762d7ba9101cc42430770b82beba4d8943c073bca7670f36ef350258aea | Duration: 40 sec
+[Sat Sep 27 21:23:19 2025] Session START | User: Shivanshu | Role: admin | Token: 334f1e25168de4997d809e00873cd9270bbe98518e7d64ea64df0ee34a6f82ad
+[Sat Sep 27 21:25:19 2025] Session TIMEOUT | User: Shivanshu | Role: admin | Token: 334f1e25168de4997d809e00873cd9270bbe98518e7d64ea64df0ee34a6f82ad | Duration: 120 sec
+[Sat Sep 27 22:18:20 2025] Session START | User: Shivanshu | Role: admin | Token: 02bab8588138d8fd2258ac013cc481fe9cd8f40296260dd8a3fe88ccc6c89b07
+[Sat Sep 27 22:18:47 2025] Session END   | User: Shivanshu | Role: admin | Token: 02bab8588138d8fd2258ac013cc481fe9cd8f40296260dd8a3fe88ccc6c89b07 | Duration: 27 sec
+[Sat Sep 27 22:18:53 2025] Session START | User: Same | Role: guest | Token: a1a3074123d509c159879bd5d2156465c6ebe9c2d73e8273c812af86edb30d86
+[Sat Sep 27 22:19:04 2025] Session END   | User: Same | Role: guest | Token: a1a3074123d509c159879bd5d2156465c6ebe9c2d73e8273c812af86edb30d86 | Duration: 11 sec

@@ -112,3 +112,8 @@
 [Sat Sep 27 19:33:53 2025] User: Leon | Role: guest | Token:  | Action: Login | Status: Success
 [Sat Sep 27 19:35:11 2025] User: Shivanshu | Role: admin | Token:  | Action: Login | Status: Success
 [Sat Sep 27 19:36:13 2025] User: Shivanshu | Role: admin | Token:  | Action: Login | Status: Success
+[Sat Sep 27 21:23:19 2025] User: Shivanshu | Role: admin | Token:  | Action: Login | Status: Success
+[Sat Sep 27 21:25:19 2025] User: Shivanshu | Role: admin | Token: 334f1e25168de4997d809e00873cd9270bbe98518e7d64ea64df0ee34a6f82ad | Action: Auto Logout | Status: Session Timeout
+[Sat Sep 27 22:18:20 2025] User: Shivanshu | Role: admin | Token: N/A | Action: MFA | Status: Success
+[Sat Sep 27 22:18:20 2025] User: Shivanshu | Role: admin | Token: N/A | Action: Login | Status: Success
+[Sat Sep 27 22:18:53 2025] User: Same | Role: guest | Token: N/A | Action: Login | Status: Success

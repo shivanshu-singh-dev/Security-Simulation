@@ -6,6 +6,7 @@
 
 #include "auth.h"
 #include "audit.h"
+#include "mfa.h"      // <-- MFA module
 
 #define USERS "users.txt"
 
@@ -18,10 +19,8 @@ void get_password(char *password, int max_len) {
     int i = 0;
     char ch;
 
-
     tcgetattr(STDIN_FILENO, &oldt);
     newt = oldt;
-
 
     newt.c_lflag &= ~(ECHO);
     tcsetattr(STDIN_FILENO, TCSANOW, &newt);
@@ -33,7 +32,7 @@ void get_password(char *password, int max_len) {
 
     tcsetattr(STDIN_FILENO, TCSANOW, &oldt);
 
-    printf("\n"); 
+    printf("\n");
 }
 
 void flush_input() {
@@ -44,11 +43,10 @@ void flush_input() {
 //Bypass Buffer for enter password
 /*
 static void prompt_now(const char *s) {
-    write(STDOUT_FILENO, s, strlen(s)); 
-    tcdrain(STDOUT_FILENO);              
+    write(STDOUT_FILENO, s, strlen(s));
+    tcdrain(STDOUT_FILENO);
 }
 */
-
 
 void hash_password(const char *password, char *output) {
     unsigned char hash[SHA256_DIGEST_LENGTH];
@@ -67,6 +65,8 @@ int register_user() {
 
     printf("Enter username: ");
     scanf("%s", username);
+    flush_input();
+
     printf("Enter password: ");
     fflush(stdout);
     get_password(password, sizeof(password));
@@ -82,7 +82,7 @@ int register_user() {
     if (choice == 0) strcpy(role, "admin");
     else if (choice == 1) strcpy(role, "user");
     else if (choice == 2) strcpy(role, "guest");
-    else strcpy(role, "guest");  //else condition other than 0 1 2
+    else strcpy(role, "guest");  // fallback to guest
 
     fp = fopen(USERS, "a");
     if (!fp) {
@@ -129,9 +129,107 @@ int login_user(char *username, char *role) {
                     return 0;
                 }
                 else if (strcmp(hashed, file_pass) == 0) {
-                    failed_attempts = 0;
-                    success = 1;
-                    strcpy(role, file_role); 
+                    // Password correct. If admin, perform MFA.
+                    if (strcmp(file_role, "admin") == 0) {
+                        // generate MFA code (written to local file by mfa_generate)
+                        if (mfa_generate(username, 120) != 0) {
+                            printf("Unable to generate MFA code. Login denied.\n");
+                            fprintf(temp, "%s:%s:%s:%d:%d\n",
+                                    file_user, file_pass, file_role, failed_attempts, locked);
+                            fclose(fp); fclose(temp);
+                            return 0;
+                        }
+
+                        printf("An MFA code has been generated for user '%s'.\n", username);
+                        printf("Check ./mfa_%s.txt for the code (expires in 120 seconds).\n", username);
+
+                        int verified = 0;
+                        while (1) {
+                            int entered = -1;
+                            printf("Enter MFA code: ");
+                            if (scanf("%d", &entered) != 1) {
+                                // invalid input; flush and retry
+                                int cc; while ((cc = getchar()) != '\n' && cc != EOF);
+                                printf("Invalid input. Try again.\n");
+                                continue;
+                            }
+                            flush_input();
+
+                            int res = mfa_verify(username, entered);
+                            if (res == 1) {
+                                printf("MFA verified.\n");
+                                log_event(username, file_role, "MFA", "Success", NULL);
+                                mfa_cleanup(username);
+                                verified = 1;
+                                break;
+                            } else if (res == 0) {
+                                int attempts_left = mfa_get_attempts(username);
+                                printf("Incorrect code. Attempts left: %d\n", attempts_left);
+                                log_event(username, file_role, "MFA", "FailedAttempt", NULL);
+                                if (attempts_left <= 0) {
+                                    printf("MFA locked due to too many failed attempts.\n");
+                                    mfa_cleanup(username);
+                                    // treat as failed login
+                                    failed_attempts++;
+                                    if (failed_attempts >= 5) {
+                                        locked = 1;
+                                        printf("Account is now locked.\n");
+                                        log_event(username, file_role, "Locked Account", "DONE", NULL);
+                                    }
+                                    break;
+                                }
+                                continue;
+                            } else if (res == -1) {
+                                printf("MFA code expired or not found. Login denied.\n");
+                                log_event(username, file_role, "MFA", "Expired", NULL);
+                                mfa_cleanup(username);
+                                // treat as failed login
+                                failed_attempts++;
+                                if (failed_attempts >= 5) {
+                                    locked = 1;
+                                    printf("Account is now locked.\n");
+                                    log_event(username, file_role, "Locked Account", "DONE", NULL);
+                                }
+                                break;
+                            } else if (res == -2) {
+                                printf("MFA locked due to too many failed attempts. Login denied.\n");
+                                log_event(username, file_role, "MFA", "Locked", NULL);
+                                mfa_cleanup(username);
+                                // treat as failed login
+                                failed_attempts++;
+                                if (failed_attempts >= 5) {
+                                    locked = 1;
+                                    printf("Account is now locked.\n");
+                                    log_event(username, file_role, "Locked Account", "DONE", NULL);
+                                }
+                                break;
+                            } else {
+                                // unexpected
+                                printf("MFA verification error. Login denied.\n");
+                                mfa_cleanup(username);
+                                failed_attempts++;
+                                if (failed_attempts >= 5) {
+                                    locked = 1;
+                                    printf("Account is now locked.\n");
+                                    log_event(username, file_role, "Locked Account", "DONE", NULL);
+                                }
+                                break;
+                            }
+                        } // end MFA loop
+
+                        if (verified) {
+                            failed_attempts = 0;
+                            success = 1;
+                            strcpy(role, file_role);
+                        } else {
+                            // MFA failed: will write updated counters below and continue outer loop
+                        }
+                    } else {
+                        // Non-admin: no MFA required
+                        failed_attempts = 0;
+                        success = 1;
+                        strcpy(role, file_role);
+                    }
                 }
                 else {
                     failed_attempts++;
@@ -139,18 +237,16 @@ int login_user(char *username, char *role) {
                     if (failed_attempts >= 5) {
                         locked = 1;
                         printf("Account is now locked.\n");
-                        log_event(username, role, "Locked Account", "DONE", get_session_token());
+                        log_event(username, file_role, "Locked Account", "DONE", NULL);
                     }
                 }
             }
             fprintf(temp, "%s:%s:%s:%d:%d\n",
-                    file_user, file_pass, file_role, failed_attempts, locked); 
-        }
+                    file_user, file_pass, file_role, failed_attempts, locked);
+        } // end while reading users
 
-        //log_event(username, "Login", success ? "Success" : "Failure");
-	//Dicarded
-	
-        freopen(USERS, "w", fp);  
+        // Write updated users back
+        freopen(USERS, "w", fp);
         rewind(temp);
         int ch; while ((ch = fgetc(temp)) != EOF) fputc(ch, fp);
 
@@ -163,10 +259,12 @@ int login_user(char *username, char *role) {
 
         if (success) {
             printf("Login successful! Role: %s\n", role);
-            log_event(username, role, "Login", success ? "Success" : "Failure", get_session_token());
+            // session token / start_session will be done by caller (main)
+            log_event(username, role, "Login", "Success", NULL);
             return 1;
         }
         if (locked) return 0;
+        // Otherwise loop to prompt password again
     }
 }
 
