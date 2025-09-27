@@ -109,3 +109,6 @@
 [Thu Sep 25 23:44:42 2025] User: Shivanshu | Role: admin | Action: Delete | Result: Success
 [Thu Sep 25 23:44:58 2025] User: Shivanshu | Role: admin | Action: Auto Logout | Result: Session Timeout
 [Thu Sep 25 23:52:26 2025] User: Shivanshu | Role: admin | Action: Login | Result: Success
+[Sat Sep 27 19:33:53 2025] User: Leon | Role: guest | Token:  | Action: Login | Status: Success
+[Sat Sep 27 19:35:11 2025] User: Shivanshu | Role: admin | Token:  | Action: Login | Status: Success
+[Sat Sep 27 19:36:13 2025] User: Shivanshu | Role: admin | Token:  | Action: Login | Status: Success

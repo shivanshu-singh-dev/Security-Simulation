@@ -139,7 +139,7 @@ int login_user(char *username, char *role) {
                     if (failed_attempts >= 5) {
                         locked = 1;
                         printf("Account is now locked.\n");
-                        log_event(username, role, "Locked Account", "DONE");
+                        log_event(username, role, "Locked Account", "DONE", get_session_token());
                     }
                 }
             }
@@ -163,7 +163,7 @@ int login_user(char *username, char *role) {
 
         if (success) {
             printf("Login successful! Role: %s\n", role);
-            log_event(username, role, "Login", success ? "Success" : "Failure");
+            log_event(username, role, "Login", success ? "Success" : "Failure", get_session_token());
             return 1;
         }
         if (locked) return 0;

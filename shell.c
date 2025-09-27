@@ -7,6 +7,7 @@
 #include <unistd.h>
 
 #include "filesystem.h"
+#include "session.h"
 
 #define DEMO "Demo/"
 
@@ -33,6 +34,12 @@ void operations_interface(const char *role) {
 
 void virtual_shell(const char *username, const char *role) {
     char cmd[256];
+    
+    if (!validate_session_token(username, get_session_token())) {
+	    printf("Invalid or expired session. Please login again.\n");
+	    return;
+	}
+    
     printf("Welcome to the virtual shell, %s!\nType 'help' for commands, 'exit' to leave.\n", username);
 
     while (1) {
@@ -84,6 +91,12 @@ void virtual_shell(const char *username, const char *role) {
             }
         }
         else if (strcmp(cmd, "delete") == 0) {
+		
+		if (!validate_session_token(username, get_session_token())) {
+			    printf("Invalid or expired session. Please login again.\n");
+			    return;
+			}
+		
             if (strcmp(role, "admin") != 0) {
                 printf("[DENIED] Only admins can delete files.\n");
                 continue;
@@ -121,6 +134,12 @@ void virtual_shell(const char *username, const char *role) {
             }
         }
         else if (strcmp(cmd, "create") == 0) {
+        
+		if (!validate_session_token(username, get_session_token())) {
+		    printf("Invalid or expired session. Please login again.\n");
+		    return;
+		}
+
             if (strcmp(role, "admin") != 0) {
                 printf("[DENIED] Only admins can create files.\n");
                 continue;
