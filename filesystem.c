@@ -1,7 +1,7 @@
 #define _DEFAULT_SOURCE
 #define _POSIX_C_SOURCE 200809L
 #define DEMO "Demo/"
-#define ROOT "./" 
+#define ROOT "./"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -11,6 +11,11 @@
 
 #include "auth.h"
 #include "filesystem.h"
+#include "crypto.h"
+
+// ---------- AES Key & IV (runtime-generated) ----------
+unsigned char AES_KEY[32];
+unsigned char AES_IV[16];
 
 // ---------- Role Permissions ----------
 int can_read(const char *role) {
@@ -32,7 +37,7 @@ int acl_allowed(const char *username, const char *filename) {
         strcmp(filename, "users.txt") == 0) {
         return strcmp(username, "Shivanshu") == 0;
     }
-    return 1; // all other files allowed
+    return 1;
 }
 
 // ---------- Unified File Listing ----------
@@ -46,7 +51,7 @@ int list_all_files(char *files[], int max_files) {
     if (d) {
         while ((dir = readdir(d)) != NULL && count < max_files) {
             if (dir->d_type == DT_REG) {
-                files[count++] = strdup(dir->d_name); // just filename
+                files[count++] = strdup(dir->d_name);
             }
         }
         closedir(d);
@@ -70,59 +75,59 @@ void filesystem_read(const char *role, const char *username) {
 
     char *files[100];
     int count = list_all_files(files, 100);
-
-    if (count == 0) {
-        printf("No files available to read.\n");
-        return;
-    }
+    if (count == 0) { printf("No files available to read.\n"); return; }
 
     printf("Available files to read:\n");
-    for (int i = 0; i < count; i++) {
-        printf("%d. %s\n", i + 1, files[i]);
-    }
+    for (int i = 0; i < count; i++) printf("%d. %s\n", i + 1, files[i]);
 
     printf("Choose a file number to read: ");
-    int choice;
-    scanf("%d", &choice);
-    flush_input();
+    int choice; scanf("%d", &choice); flush_input();
 
-    if (choice < 1 || choice > count) {
-        printf("Invalid choice.\n");
-        goto cleanup;
-    }
+    if (choice < 1 || choice > count) { printf("Invalid choice.\n"); goto cleanup; }
 
     const char *fname = files[choice - 1];
-
     if (!acl_allowed(username, fname)) {
         printf("[ACCESS DENIED] %s cannot access %s\n", username, fname);
         goto cleanup;
     }
 
     char filepath[1024];
-	if ((strcmp(files[choice-1], "session.log") == 0 ||
-	     strcmp(files[choice-1], "audit.log") == 0 ||
-	     strcmp(files[choice-1], "users.txt") == 0) &&
-	     strcmp(username, "Shivanshu") == 0) 
-	{
-	    snprintf(filepath, sizeof(filepath), "%s", files[choice-1]);
-	} else {
-	    snprintf(filepath, sizeof(filepath), "%s%s", DEMO, files[choice-1]); 
-	}
-
-
-    FILE *fp = fopen(filepath, "r");
-    if (!fp) {
-        printf("Failed to open %s\n", filepath);
-        goto cleanup;
+    if ((strcmp(fname, "session.log") == 0 ||
+         strcmp(fname, "audit.log") == 0 ||
+         strcmp(fname, "users.txt") == 0) &&
+        strcmp(username, "Shivanshu") == 0) {
+        snprintf(filepath, sizeof(filepath), "%s", fname);
+    } else {
+        snprintf(filepath, sizeof(filepath), "%s%s", DEMO, fname);
     }
+
+    char tmp[1024];
+    int decrypted = 0;
+    if (strstr(filepath, ".enc")) {
+        printf("[INFO] Encrypted file detected: %s\n", fname);
+        printf("Decrypt before reading? (y/n): ");
+        char ans; scanf(" %c", &ans); flush_input();
+        if (ans == 'y' || ans == 'Y') {
+            snprintf(tmp, sizeof(tmp), "%s.tmp", filepath);
+            if (decrypt_file(filepath, tmp, AES_KEY, AES_IV) != 0) {
+                printf("[ERROR] Decryption failed.\n"); goto cleanup;
+            }
+            decrypted = 1;
+        } else {
+            printf("Cannot read encrypted file without decryption.\n"); goto cleanup;
+        }
+    }
+
+    FILE *fp = fopen(decrypted ? tmp : filepath, "r");
+    if (!fp) { printf("Failed to open %s\n", filepath); goto cleanup; }
 
     printf("Contents of %s:\n", fname);
     char line[256];
-    while (fgets(line, sizeof(line), fp)) {
-        printf("%s", line);
-    }
+    while (fgets(line, sizeof(line), fp)) printf("%s", line);
     fclose(fp);
     printf("\n");
+
+    if (decrypted) remove(tmp);
 
 cleanup:
     for (int i = 0; i < count; i++) free(files[i]);
@@ -130,67 +135,69 @@ cleanup:
 
 // ---------- Write ----------
 void filesystem_write(const char *role, const char *username) {
-    if (!can_write(role)) {
-        printf("Permission Denied: You cannot write files.\n");
-        return;
-    }
+    if (!can_write(role)) { printf("Permission Denied: You cannot write files.\n"); return; }
 
     char *files[100];
     int count = list_all_files(files, 100);
-
-    if (count == 0) {
-        printf("No files available to write.\n");
-        return;
-    }
+    if (count == 0) { printf("No files available to write.\n"); return; }
 
     printf("Available files to write:\n");
-    for (int i = 0; i < count; i++) {
-        printf("%d. %s\n", i + 1, files[i]);
-    }
+    for (int i = 0; i < count; i++) printf("%d. %s\n", i + 1, files[i]);
 
     printf("Choose a file number to write: ");
-    int choice;
-    scanf("%d", &choice);
-    flush_input();
-
-    if (choice < 1 || choice > count) {
-        printf("Invalid choice.\n");
-        goto cleanup;
-    }
+    int choice; scanf("%d", &choice); flush_input();
+    if (choice < 1 || choice > count) { printf("Invalid choice.\n"); goto cleanup; }
 
     const char *fname = files[choice - 1];
-
     if (!acl_allowed(username, fname)) {
-        printf("[ACCESS DENIED] %s cannot access %s\n", username, fname);
-        goto cleanup;
+        printf("[ACCESS DENIED] %s cannot access %s\n", username, fname); goto cleanup;
     }
 
     char filepath[1024];
-	if ((strcmp(files[choice-1], "session.log") == 0 ||
-	     strcmp(files[choice-1], "audit.log") == 0 ||
-	     strcmp(files[choice-1], "users.txt") == 0) &&
-	     strcmp(username, "Shivanshu") == 0) 
-	{
-	    snprintf(filepath, sizeof(filepath), "%s", files[choice-1]);
-	} else {
-	    snprintf(filepath, sizeof(filepath), "%s%s", DEMO, files[choice-1]); 
-	}
-
-
-    FILE *fp = fopen(filepath, "a");
-    if (!fp) {
-        printf("Failed to open %s\n", filepath);
-        goto cleanup;
+    if ((strcmp(fname, "session.log") == 0 ||
+         strcmp(fname, "audit.log") == 0 ||
+         strcmp(fname, "users.txt") == 0) &&
+        strcmp(username, "Shivanshu") == 0) {
+        snprintf(filepath, sizeof(filepath), "%s", fname);
+    } else {
+        snprintf(filepath, sizeof(filepath), "%s%s", DEMO, fname);
     }
+
+    char tmp[1024];
+    int decrypted = 0;
+    if (strstr(filepath, ".enc")) {
+        printf("[INFO] Encrypted file detected: %s\n", fname);
+        printf("Decrypt before writing? (y/n): ");
+        char ans; scanf(" %c", &ans); flush_input();
+        if (ans == 'y' || ans == 'Y') {
+            snprintf(tmp, sizeof(tmp), "%s.tmp", filepath);
+            if (decrypt_file(filepath, tmp, AES_KEY, AES_IV) != 0) {
+                printf("[ERROR] Decryption failed.\n"); goto cleanup;
+            }
+            decrypted = 1;
+        } else {
+            printf("Cannot write to encrypted file without decryption.\n"); goto cleanup;
+        }
+    }
+
+    FILE *fp = fopen(decrypted ? tmp : filepath, "a");
+    if (!fp) { printf("Failed to open %s\n", filepath); goto cleanup; }
 
     char input[200];
     printf("Enter text to append: ");
-    getchar();
-    fgets(input, sizeof(input), stdin);
+    getchar(); fgets(input, sizeof(input), stdin);
 
     time_t t = time(NULL);
     fprintf(fp, "[%s] %s", ctime(&t), input);
     fclose(fp);
+
+    if (decrypted) {
+        char encpath[1024]; snprintf(encpath, sizeof(encpath), "%s", filepath);
+        if (encrypt_file(tmp, encpath, AES_KEY, AES_IV) != 0) {
+            printf("[ERROR] Re-encryption failed!\n");
+        }
+        remove(tmp);
+    }
 
     printf("Successfully appended to %s\n", fname);
 
@@ -200,79 +207,71 @@ cleanup:
 
 // ---------- Execute ----------
 void filesystem_exec(const char *role, const char *username) {
-    if (!can_execute(role)) {
-        printf("Permission Denied: You cannot execute files.\n");
-        return;
-    }
+    if (!can_execute(role)) { printf("Permission Denied: You cannot execute files.\n"); return; }
 
     char *files[100];
     int count = list_all_files(files, 100);
-
-    if (count == 0) {
-        printf("No files available to execute.\n");
-        return;
-    }
+    if (count == 0) { printf("No files available to execute.\n"); return; }
 
     printf("Available files to execute:\n");
-    for (int i = 0; i < count; i++) {
-        printf("%d. %s\n", i + 1, files[i]);
-    }
+    for (int i = 0; i < count; i++) printf("%d. %s\n", i + 1, files[i]);
 
     printf("Choose a file number to execute: ");
-    int choice;
-    scanf("%d", &choice);
-    flush_input();
-
-    if (choice < 1 || choice > count) {
-        printf("Invalid choice.\n");
-        goto cleanup;
-    }
+    int choice; scanf("%d", &choice); flush_input();
+    if (choice < 1 || choice > count) { printf("Invalid choice.\n"); goto cleanup; }
 
     const char *fname = files[choice - 1];
-
     if (!acl_allowed(username, fname)) {
-        printf("[ACCESS DENIED] %s cannot execute %s\n", username, fname);
-        goto cleanup;
+        printf("[ACCESS DENIED] %s cannot execute %s\n", username, fname); goto cleanup;
     }
 
     if (strcmp(fname, "session.log") == 0 || strcmp(fname, "audit.log") == 0 || strcmp(fname, "users.txt") == 0) {
-        printf("These files cannot be executed.\n");
-        goto cleanup;
+        printf("These files cannot be executed.\n"); goto cleanup;
     }
 
     char filepath[1024];
-	if ((strcmp(files[choice-1], "session.log") == 0 ||
-	     strcmp(files[choice-1], "audit.log") == 0 ||
-	     strcmp(files[choice-1], "users.txt") == 0) &&
-	     strcmp(username, "Shivanshu") == 0) 
-	{
-	    snprintf(filepath, sizeof(filepath), "%s", files[choice-1]);
-	} else {
-	    snprintf(filepath, sizeof(filepath), "%s%s", DEMO, files[choice-1]); 
-	}
+    if ((strcmp(fname, "session.log") == 0 ||
+         strcmp(fname, "audit.log") == 0 ||
+         strcmp(fname, "users.txt") == 0) &&
+        strcmp(username, "Shivanshu") == 0) {
+        snprintf(filepath, sizeof(filepath), "%s", fname);
+    } else {
+        snprintf(filepath, sizeof(filepath), "%s%s", DEMO, fname);
+    }
 
+    char tmp[1024];
+    int decrypted = 0;
+    if (strstr(filepath, ".enc")) {
+        printf("[INFO] Encrypted file detected: %s\n", fname);
+        printf("Decrypt before execution? (y/n): ");
+        char ans; scanf(" %c", &ans); flush_input();
+        if (ans == 'y' || ans == 'Y') {
+            snprintf(tmp, sizeof(tmp), "%s.tmp", filepath);
+            if (decrypt_file(filepath, tmp, AES_KEY, AES_IV) != 0) {
+                printf("[ERROR] Decryption failed.\n"); goto cleanup;
+            }
+            decrypted = 1;
+        } else { printf("Cannot execute encrypted file without decryption.\n"); goto cleanup; }
+    }
 
     const char *ext = strrchr(fname, '.');
     if (ext) {
         char *cmd = NULL, *exe = NULL;
 
-        if (strcmp(ext, ".sh") == 0) {
-            asprintf(&cmd, "bash %s", filepath);
-        } else if (strcmp(ext, ".py") == 0) {
-            asprintf(&cmd, "python3 %s", filepath);
-        } else if (strcmp(ext, ".c") == 0) {
+        if (strcmp(ext, ".sh") == 0) asprintf(&cmd, "bash %s", decrypted ? tmp : filepath);
+        else if (strcmp(ext, ".py") == 0) asprintf(&cmd, "python3 %s", decrypted ? tmp : filepath);
+        else if (strcmp(ext, ".c") == 0) {
             asprintf(&exe, "%s_exec", fname);
-            asprintf(&cmd, "gcc %s -o %s && ./%s", filepath, exe, exe);
+            asprintf(&cmd, "gcc %s -o %s && ./%s", decrypted ? tmp : filepath, exe, exe);
         }
 
-        if (cmd) {
-            system(cmd);
-            free(cmd);
-        }
+        if (cmd) { system(cmd); free(cmd); }
         free(exe);
     } else {
         printf("Cannot execute file with no extension safely.\n");
     }
+
+    if (decrypted) remove(tmp);
 
 cleanup:
     for (int i = 0; i < count; i++) free(files[i]);

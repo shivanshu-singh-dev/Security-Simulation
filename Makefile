@@ -1,17 +1,23 @@
-# 1. Variables
 CC = gcc
 CFLAGS = -Wall -Wextra -std=c11
+
+# 2. Object Files
 OBJ = main.o auth.o acl.o crypto.o shell.o audit.o utils.o operations.o session.o filesystem.o mfa.o
 
-# 2. Final build rule
-os_security: $(OBJ)
-	$(CC) $(CFLAGS) -o run $(OBJ) -lcrypto
+# 3. Output Binary
+TARGET = run
 
-# 3. Compilation rule (pattern rule)
+# 4. Build Rule
+$(TARGET): $(OBJ)
+	$(CC) $(CFLAGS) -o $(TARGET) $(OBJ) -lcrypto
+
+# 5. Pattern Rule for Object Files
 %.o: %.c
 	$(CC) $(CFLAGS) -c $< -o $@
 
-# 4. Cleanup rule
+# 6. Cleanup Rule
 clean:
-	rm -f *.o run
+	rm -f *.o $(TARGET)
 
+# 7. Rebuild Everything
+rebuild: clean $(TARGET)

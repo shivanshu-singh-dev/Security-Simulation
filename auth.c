@@ -64,7 +64,7 @@ int register_user() {
     FILE *fp;
 
     printf("Enter username: ");
-    scanf("%s", username);
+    scanf("%49s", username);
     flush_input();
 
     printf("Enter password: ");
@@ -82,7 +82,7 @@ int register_user() {
     if (choice == 0) strcpy(role, "admin");
     else if (choice == 1) strcpy(role, "user");
     else if (choice == 2) strcpy(role, "guest");
-    else strcpy(role, "guest");  // fallback to guest
+    else strcpy(role, "guest");
 
     fp = fopen(USERS, "a");
     if (!fp) {
