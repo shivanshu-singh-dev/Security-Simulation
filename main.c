@@ -10,6 +10,9 @@
 
 #define BUF 100
 
+extern unsigned char AES_KEY[32];
+extern unsigned char AES_IV[16];
+
 void decrypt_logs_if_authorized(const char *username, const char *password) {
     if (strcmp(username, "admin") != 0) {
         printf("You are not authorized to decrypt logs.\n");
@@ -31,6 +34,8 @@ void decrypt_logs_if_authorized(const char *username, const char *password) {
 int main() {
     char buffer[BUF];
     int choice;
+    //generate_aes_key_iv(AES_KEY, AES_IV);
+    init_aes_key_iv();
 
     while (1) {
         printf("\n----------Login Window----------\n");

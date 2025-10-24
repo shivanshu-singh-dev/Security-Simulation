@@ -145,6 +145,8 @@ void virtual_shell(const char *username, const char *role) {
             printf("File '%s' created successfully.\n", filename);
         }
         else if (strcmp(cmd, "encrypt") == 0 || strcmp(cmd, "decrypt") == 0) {
+        	
+
             if (!validate_session_token(username, get_session_token())) {
                 printf("Invalid or expired session. Please login again.\n");
                 return;
@@ -170,6 +172,8 @@ void virtual_shell(const char *username, const char *role) {
 
             char filepath[512], tmp[512];
             snprintf(filepath, sizeof(filepath), "%s%s", DEMO, files[choice-1]);
+            
+            printf("[DEBUG] Encrypting '%s' with AES_KEY=%p AES_IV=%p\n", filepath, AES_KEY, AES_IV);
 
             if (strcmp(cmd, "encrypt") == 0) {
                 snprintf(tmp, sizeof(tmp), "%s.enc", filepath);
@@ -193,6 +197,7 @@ void virtual_shell(const char *username, const char *role) {
             for (int i = 0; i < count; i++) free(files[i]);
         }
         else {
+        //printf("[DEBUG] Encrypting '%s' with AES_KEY=%p AES_IV=%p\n", filepath, AES_KEY, AES_IV);
             printf("Unknown command: '%s'.\nType 'help' for available commands.\n", cmd);
         }
     }

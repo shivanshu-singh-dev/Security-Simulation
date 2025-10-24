@@ -13,10 +13,6 @@
 #include "filesystem.h"
 #include "crypto.h"
 
-// ---------- AES Key & IV (runtime-generated) ----------
-unsigned char AES_KEY[32];
-unsigned char AES_IV[16];
-
 // ---------- Role Permissions ----------
 int can_read(const char *role) {
     return strcmp(role, "admin") == 0 || strcmp(role, "user") == 0 || strcmp(role, "guest") == 0;

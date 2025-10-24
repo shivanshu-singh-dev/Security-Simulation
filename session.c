@@ -4,6 +4,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <unistd.h>
+#include <time.h>
 #include "session.h"
 #include "audit.h"
 #include "crypto.h"
@@ -29,7 +30,7 @@ static void to_hex_string(const unsigned char *hash, size_t len, char *out) {
 // Generate session token
 void generate_session_token(const char *username, char *token) {
     char buffer[256];
-    snprintf(buffer, sizeof(buffer), "%s-%ld-%d", username, time(NULL), rand());
+    snprintf(buffer, sizeof(buffer), "%s-%ld-%d", username, (long)time(NULL), rand());
 
     unsigned char hash[SHA256_DIGEST_LENGTH];
     SHA256((unsigned char *)buffer, strlen(buffer), hash);
@@ -67,9 +68,6 @@ void start_session(const char *username, const char *role) {
     current_role[sizeof(current_role)-1] = '\0';
 
     generate_session_token(username, current_token);
-
-    // Generate AES key/IV at runtime
-    generate_aes_key_iv(AES_KEY, AES_IV);
 
     FILE *fp = fopen(SESSION, "a");
     if (!fp) return;
