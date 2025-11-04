@@ -145,13 +145,23 @@ void virtual_shell(const char *username, const char *role) {
 	    int shown = 0;
 	    printf("Available files to encrypt:\n");
 	    for (int i = 0; i < count; ++i) {
+		// Skip already encrypted files
 		if (strstr(files[i], ".enc") != NULL) continue;
+		
+		// Skip system files that shouldn't be encrypted via this command
 		if (strcmp(files[i], "users.txt") == 0 ||
 		    strcmp(files[i], "superusers.txt") == 0) continue;
 
-		// Skip if already encrypted version exists
+		// Check if encrypted version already exists
 		char encver[512];
-		snprintf(encver, sizeof(encver), "%s.enc", files[i]);
+		if (strcmp(files[i], "session.log") == 0) {
+		    snprintf(encver, sizeof(encver), "session.enc");
+		} else if (strcmp(files[i], "audit.log") == 0) {
+		    snprintf(encver, sizeof(encver), "audit.enc");
+		} else {
+		    snprintf(encver, sizeof(encver), "%s%s.enc", DEMO, files[i]);
+		}
+		
 		FILE *chk = fopen(encver, "r");
 		if (chk) { fclose(chk); continue; }
 
@@ -184,8 +194,18 @@ void virtual_shell(const char *username, const char *role) {
 
 	    char *filename = files[ map_idx[choice - 1] ];
 	    char infile[512], outfile[512];
-	    snprintf(infile, sizeof(infile), "%s%s", DEMO, filename);
-	    snprintf(outfile, sizeof(outfile), "%s%s.enc", DEMO, filename);
+	    
+	    // Special files are in root directory with .enc extension (not .log.enc)
+	    if (strcmp(filename, "session.log") == 0) {
+		snprintf(infile, sizeof(infile), "session.log");
+		snprintf(outfile, sizeof(outfile), "session.enc");
+	    } else if (strcmp(filename, "audit.log") == 0) {
+		snprintf(infile, sizeof(infile), "audit.log");
+		snprintf(outfile, sizeof(outfile), "audit.enc");
+	    } else {
+		snprintf(infile, sizeof(infile), "%s%s", DEMO, filename);
+		snprintf(outfile, sizeof(outfile), "%s%s.enc", DEMO, filename);
+	    }
 
 	    if (access(infile, F_OK) != 0) {
 		printf("[WARN] File '%s' not found. It might already be encrypted.\n", infile);
@@ -194,7 +214,7 @@ void virtual_shell(const char *username, const char *role) {
 	    }
 
 	    char tmpfile[512];
-	    snprintf(tmpfile, sizeof(tmpfile), "%s%s.tmp", DEMO, filename);
+	    snprintf(tmpfile, sizeof(tmpfile), "%s.tmp", infile);
 	    if (encrypt_file(infile, tmpfile) == 0) {
 		remove(infile);
 		rename(tmpfile, outfile);
@@ -206,7 +226,6 @@ void virtual_shell(const char *username, const char *role) {
 
 	    for (int i = 0; i < count; ++i) free(files[i]);
 	}
-
 
 	else if (strcmp(cmd, "decrypt") == 0) {
 	    if (strcmp(role, "admin") != 0 && !superuser(username)) {
@@ -225,16 +244,39 @@ void virtual_shell(const char *username, const char *role) {
 	    int shown = 0;
 	    printf("Available encrypted files:\n");
 	    for (int i = 0; i < count; ++i) {
-		if (strstr(files[i], ".enc") == NULL) continue;
-		if (strcmp(files[i], "users.txt.enc") == 0 ||
-		    strcmp(files[i], "superusers.txt.enc") == 0) continue;
-
-		// Skip if plain version already exists
+		// Look for both .enc and .log.enc patterns
+		int is_encrypted = 0;
 		char base[512];
 		strncpy(base, files[i], sizeof(base));
-		char *dot = strstr(base, ".enc");
-		if (dot) *dot = '\0';
-		FILE *chk = fopen(base, "r");
+		
+		// Check for .enc extension (session.enc, audit.enc)
+		if (strstr(files[i], ".enc") != NULL) {
+		    char *dot = strstr(base, ".enc");
+		    if (dot) *dot = '\0';
+		    is_encrypted = 1;
+		}
+		// Check for .log.enc extension (session.log.enc, audit.log.enc)  
+		else if (strstr(files[i], ".log.enc") != NULL) {
+		    char *dot = strstr(base, ".log.enc");
+		    if (dot) *dot = '\0';
+		    strcat(base, ".log"); // Add .log back to base name
+		    is_encrypted = 1;
+		}
+
+		if (!is_encrypted) continue;
+
+		// Skip if plain version already exists
+		char plainfile[512];
+		if (strcmp(base, "session.log") == 0 || 
+		    strcmp(base, "audit.log") == 0 ||
+		    strcmp(base, "users.txt") == 0 ||
+		    strcmp(base, "superusers.txt") == 0) {
+		    snprintf(plainfile, sizeof(plainfile), "%s", base);
+		} else {
+		    snprintf(plainfile, sizeof(plainfile), "%s%s", DEMO, base);
+		}
+		
+		FILE *chk = fopen(plainfile, "r");
 		if (chk) { fclose(chk); continue; }
 
 		shown++;
@@ -266,18 +308,58 @@ void virtual_shell(const char *username, const char *role) {
 
 	    char *encname = files[ map_idx[choice - 1] ];
 	    char infile[512], tmpfile[512];
-	    snprintf(infile, sizeof(infile), "%s%s", DEMO, encname);
+	    
+	    // Handle both naming conventions
+	    if (strcmp(encname, "session.enc") == 0 || 
+		strcmp(encname, "audit.enc") == 0 ||
+		strcmp(encname, "session.log.enc") == 0 || 
+		strcmp(encname, "audit.log.enc") == 0 ||
+		strcmp(encname, "users.txt.enc") == 0 ||
+		strcmp(encname, "superusers.txt.enc") == 0) {
+		snprintf(infile, sizeof(infile), "%s", encname);
+	    } else {
+		snprintf(infile, sizeof(infile), "%s%s", DEMO, encname);
+	    }
 
 	    char base[512];
 	    strncpy(base, encname, sizeof(base));
-	    char *dot = strstr(base, ".enc");
-	    if (dot) *dot = '\0';
-	    snprintf(tmpfile, sizeof(tmpfile), "%s%s.tmp", DEMO, base);
+	    
+	    // Convert encrypted name back to original name
+	    if (strcmp(encname, "session.enc") == 0) {
+		strcpy(base, "session.log");
+	    } else if (strcmp(encname, "audit.enc") == 0) {
+		strcpy(base, "audit.log");
+	    } else if (strstr(encname, ".log.enc") != NULL) {
+		char *dot = strstr(base, ".log.enc");
+		if (dot) *dot = '\0';
+		strcat(base, ".log");
+	    } else if (strstr(encname, ".enc") != NULL) {
+		char *dot = strstr(base, ".enc");
+		if (dot) *dot = '\0';
+	    }
+	    
+	    // Special decrypted files go to root directory
+	    if (strcmp(base, "session.log") == 0 || 
+		strcmp(base, "audit.log") == 0 ||
+		strcmp(base, "users.txt") == 0 ||
+		strcmp(base, "superusers.txt") == 0) {
+		snprintf(tmpfile, sizeof(tmpfile), "%s.tmp", base);
+	    } else {
+		snprintf(tmpfile, sizeof(tmpfile), "%s%s.tmp", DEMO, base);
+	    }
 
 	    if (decrypt_file(infile, tmpfile) == 0) {
 		remove(infile);
 		char outfile[512];
-		snprintf(outfile, sizeof(outfile), "%s%s", DEMO, base);
+		// Special files go to root directory
+		if (strcmp(base, "session.log") == 0 || 
+		    strcmp(base, "audit.log") == 0 ||
+		    strcmp(base, "users.txt") == 0 ||
+		    strcmp(base, "superusers.txt") == 0) {
+		    snprintf(outfile, sizeof(outfile), "%s", base);
+		} else {
+		    snprintf(outfile, sizeof(outfile), "%s%s", DEMO, base);
+		}
 		rename(tmpfile, outfile);
 		printf("File '%s' decrypted successfully -> %s\n", encname, base);
 	    } else {
@@ -285,8 +367,8 @@ void virtual_shell(const char *username, const char *role) {
 		remove(tmpfile);
 	    }
 
-	    for (int i = 0; i < count; ++i) free(files[i]);
-	}
+    for (int i = 0; i < count; ++i) free(files[i]);
+}
 
 
 
@@ -323,7 +405,15 @@ void virtual_shell(const char *username, const char *role) {
             if (choice < 1 || choice > count) { printf("Invalid choice.\n"); continue; }
 
             char filepath[512];
-            snprintf(filepath, sizeof(filepath), "%s%s", DEMO, files[choice - 1]);
+            // Special files are in root directory
+            if (strcmp(files[choice - 1], "session.log") == 0 || 
+                strcmp(files[choice - 1], "audit.log") == 0 ||
+                strcmp(files[choice - 1], "users.txt") == 0 ||
+                strcmp(files[choice - 1], "superusers.txt") == 0) {
+                snprintf(filepath, sizeof(filepath), "%s", files[choice - 1]);
+            } else {
+                snprintf(filepath, sizeof(filepath), "%s%s", DEMO, files[choice - 1]);
+            }
             if (remove(filepath) == 0)
                 printf("File '%s' deleted successfully.\n", files[choice - 1]);
             else
@@ -342,6 +432,7 @@ void virtual_shell(const char *username, const char *role) {
             filename[strcspn(filename, "\n")] = 0;
 
             char filepath[512];
+            // Only create in Demo directory, not root
             snprintf(filepath, sizeof(filepath), "%s%s", DEMO, filename);
             FILE *fp = fopen(filepath, "w");
             if (!fp) { perror("Failed to create file"); continue; }
@@ -361,4 +452,3 @@ void virtual_shell(const char *username, const char *role) {
         }
     }
 }
-

@@ -8,6 +8,7 @@
 #include <string.h>
 #include <dirent.h>
 #include <time.h>
+#include <unistd.h>
 
 #include "auth.h"
 #include "filesystem.h"
@@ -29,12 +30,12 @@ int can_execute(const char *role) {
     return strcmp(role, "admin") == 0;
 }
 
-
 int list_all_files(char *files[], int max_files) {
     int count = 0;
     DIR *d;
     struct dirent *dir;
 
+    // List files from Demo directory
     d = opendir(DEMO);
     if (d) {
         while ((dir = readdir(d)) != NULL && count < max_files) {
@@ -45,9 +46,14 @@ int list_all_files(char *files[], int max_files) {
         closedir(d);
     }
 
-    const char *special[] = {"session.log", "audit.log", "users.txt", SUPER_FILE};
-    for (int i = 0; i < 3 && count < max_files; i++) {
-        files[count++] = strdup(special[i]);
+    // Always include the special files from root directory if they exist
+    const char *special[] = {"session.log", "audit.log", "users.txt", "superusers.txt", 
+                            "session.enc", "audit.enc"};
+    for (int i = 0; i < 6 && count < max_files; i++) {
+        // Check if file exists before adding
+        if (access(special[i], F_OK) == 0) {
+            files[count++] = strdup(special[i]);
+        }
     }
 
     return count;
@@ -79,10 +85,11 @@ void filesystem_read(const char *role, const char *username) {
     }
 
     char filepath[1024];
-    if ((strcmp(fname, "session.log") == 0 ||
-         strcmp(fname, "audit.log") == 0 ||
-         strcmp(fname, "users.txt") == 0) &&
-        strcmp(username, "Shivanshu") == 0) {
+    // Special files are in root directory
+    if (strcmp(fname, "session.log") == 0 ||
+        strcmp(fname, "audit.log") == 0 ||
+        strcmp(fname, "users.txt") == 0 ||
+        strcmp(fname, "superusers.txt") == 0) {
         snprintf(filepath, sizeof(filepath), "%s", fname);
     } else {
         snprintf(filepath, sizeof(filepath), "%s%s", DEMO, fname);
@@ -141,10 +148,11 @@ void filesystem_write(const char *role, const char *username) {
     }
 
     char filepath[1024];
-    if ((strcmp(fname, "session.log") == 0 ||
-         strcmp(fname, "audit.log") == 0 ||
-         strcmp(fname, "users.txt") == 0) &&
-        strcmp(username, "Shivanshu") == 0) {
+    // Special files are in root directory
+    if (strcmp(fname, "session.log") == 0 ||
+        strcmp(fname, "audit.log") == 0 ||
+        strcmp(fname, "users.txt") == 0 ||
+        strcmp(fname, "superusers.txt") == 0) {
         snprintf(filepath, sizeof(filepath), "%s", fname);
     } else {
         snprintf(filepath, sizeof(filepath), "%s%s", DEMO, fname);
@@ -216,15 +224,16 @@ void filesystem_exec(const char *role, const char *username) {
         printf("[ACCESS DENIED] %s cannot execute %s\n", username, fname); goto cleanup;
     }
 
-    if (strcmp(fname, "session.log") == 0 || strcmp(fname, "audit.log") == 0 || strcmp(fname, "users.txt") == 0) {
+    if (strcmp(fname, "session.log") == 0 || strcmp(fname, "audit.log") == 0 || strcmp(fname, "users.txt") == 0 || strcmp(fname, "superusers.txt") == 0) {
         printf("These files cannot be executed.\n"); goto cleanup;
     }
 
     char filepath[1024];
-    if ((strcmp(fname, "session.log") == 0 ||
-         strcmp(fname, "audit.log") == 0 ||
-         strcmp(fname, "users.txt") == 0) &&
-        strcmp(username, "Shivanshu") == 0) {
+    // Special files are in root directory
+    if (strcmp(fname, "session.log") == 0 ||
+        strcmp(fname, "audit.log") == 0 ||
+        strcmp(fname, "users.txt") == 0 ||
+        strcmp(fname, "superusers.txt") == 0) {
         snprintf(filepath, sizeof(filepath), "%s", fname);
     } else {
         snprintf(filepath, sizeof(filepath), "%s%s", DEMO, fname);
@@ -267,4 +276,3 @@ void filesystem_exec(const char *role, const char *username) {
 cleanup:
     for (int i = 0; i < count; i++) free(files[i]);
 }
-
