@@ -113,7 +113,7 @@ void virtual_shell(const char *username, const char *role) {
             fprintf(fp, "%s\n", new_super);
             fclose(fp);
             chmod("superusers.txt", 0444);
-            printf("✅ Superuser '%s' added successfully.\n", new_super);
+            printf("Superuser '%s' added successfully.\n", new_super);
 
             printf("\n--- Superuser List ---\n");
             fp = fopen("superusers.txt", "r");

@@ -58,7 +58,6 @@ int list_all_files(char *files[], int max_files) {
 
     return count;
 }
-
 // ---------- Read ----------
 void filesystem_read(const char *role, const char *username) {
     if (!can_read(role)) {
@@ -85,11 +84,13 @@ void filesystem_read(const char *role, const char *username) {
     }
 
     char filepath[1024];
-    // Special files are in root directory
+    // Special files are in root directory (both plain and encrypted versions)
     if (strcmp(fname, "session.log") == 0 ||
         strcmp(fname, "audit.log") == 0 ||
         strcmp(fname, "users.txt") == 0 ||
-        strcmp(fname, "superusers.txt") == 0) {
+        strcmp(fname, "superusers.txt") == 0 ||
+        strcmp(fname, "session.enc") == 0 ||
+        strcmp(fname, "audit.enc") == 0) {
         snprintf(filepath, sizeof(filepath), "%s", fname);
     } else {
         snprintf(filepath, sizeof(filepath), "%s%s", DEMO, fname);
@@ -113,7 +114,11 @@ void filesystem_read(const char *role, const char *username) {
     }
 
     FILE *fp = fopen(decrypted ? tmp : filepath, "r");
-    if (!fp) { printf("Failed to open %s\n", filepath); goto cleanup; }
+    if (!fp) { 
+        printf("Failed to open %s\n", filepath); 
+        if (decrypted) remove(tmp);
+        goto cleanup; 
+    }
 
     printf("Contents of %s:\n", fname);
     char line[256];
@@ -148,15 +153,17 @@ void filesystem_write(const char *role, const char *username) {
     }
 
     char filepath[1024];
-    // Special files are in root directory
-    if (strcmp(fname, "session.log") == 0 ||
-        strcmp(fname, "audit.log") == 0 ||
-        strcmp(fname, "users.txt") == 0 ||
-        strcmp(fname, "superusers.txt") == 0) {
-        snprintf(filepath, sizeof(filepath), "%s", fname);
-    } else {
-        snprintf(filepath, sizeof(filepath), "%s%s", DEMO, fname);
-    }
+	// Special files are in root directory (both plain and encrypted versions)
+	if (strcmp(fname, "session.log") == 0 ||
+	    strcmp(fname, "audit.log") == 0 ||
+	    strcmp(fname, "users.txt") == 0 ||
+	    strcmp(fname, "superusers.txt") == 0 ||
+	    strcmp(fname, "session.enc") == 0 ||
+	    strcmp(fname, "audit.enc") == 0) {
+	    snprintf(filepath, sizeof(filepath), "%s", fname);
+	} else {
+	    snprintf(filepath, sizeof(filepath), "%s%s", DEMO, fname);
+	}
 
     char tmp[1024];
     int decrypted = 0;
@@ -229,15 +236,17 @@ void filesystem_exec(const char *role, const char *username) {
     }
 
     char filepath[1024];
-    // Special files are in root directory
-    if (strcmp(fname, "session.log") == 0 ||
-        strcmp(fname, "audit.log") == 0 ||
-        strcmp(fname, "users.txt") == 0 ||
-        strcmp(fname, "superusers.txt") == 0) {
-        snprintf(filepath, sizeof(filepath), "%s", fname);
-    } else {
-        snprintf(filepath, sizeof(filepath), "%s%s", DEMO, fname);
-    }
+	// Special files are in root directory (both plain and encrypted versions)
+	if (strcmp(fname, "session.log") == 0 ||
+	    strcmp(fname, "audit.log") == 0 ||
+	    strcmp(fname, "users.txt") == 0 ||
+	    strcmp(fname, "superusers.txt") == 0 ||
+	    strcmp(fname, "session.enc") == 0 ||
+	    strcmp(fname, "audit.enc") == 0) {
+	    snprintf(filepath, sizeof(filepath), "%s", fname);
+	} else {
+	    snprintf(filepath, sizeof(filepath), "%s%s", DEMO, fname);
+}
 
     char tmp[1024];
     int decrypted = 0;

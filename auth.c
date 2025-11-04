@@ -6,12 +6,13 @@
 
 #include "auth.h"
 #include "audit.h"
-#include "mfa.h"      // <-- MFA module
+#include "mfa.h"
 
 #define USERS "users.txt"
 
 #include <termios.h>
 #include <unistd.h>
+
 
 // Password Masking
 void get_password(char *password, int max_len) {
@@ -259,7 +260,7 @@ int login_user(char *username, char *role) {
 
         if (success) {
             printf("Login successful! Role: %s\n", role);
-            // session token / start_session will be called by (main)
+            
             log_event(username, role, "Login", "Success", NULL);
             return 1;
         }
