@@ -9,16 +9,16 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
-#define MFA_DIR "MFA"                  // directory for MFA code files
+#define MFA_DIR "MFA"                 
 #define MFA_FILE_FMT MFA_DIR "/mfa_%s.txt"
 #define MAX_USERS 64
-#define DEFAULT_EXPIRY 120             // seconds
+#define DEFAULT_EXPIRY 120            
 #define MAX_ATTEMPTS 3
 
 typedef struct {
-    int used;                 // 0 = free slot, 1 = used
+    int used;                
     char username[64];
-    int code;                  // 6-digit code
+    int code;              
     time_t expires_at;
     int attempts_left;
 } mfa_entry_t;
@@ -40,6 +40,14 @@ static void mfa_init_if_needed(void) {
 
     mfa_inited = 1;
 }
+/* whats F_OK
+
+explain
+    if (access(MFA_DIR, F_OK) != 0) {
+        mkdir(MFA_DIR, 0755);
+    }
+
+*/
 
 static mfa_entry_t *find_entry(const char *username) {
     for (int i = 0; i < MAX_USERS; ++i) {
@@ -85,10 +93,8 @@ static void write_code_to_file(const char *username, int code, time_t expires_at
 static void remove_code_file(const char *username) {
     char path[512];
     snprintf(path, sizeof(path), MFA_FILE_FMT, username);
-    unlink(path);  // ignore errors
+    unlink(path);
 }
-
-/* Public API */
 
 int mfa_generate(const char *username, int expiry_seconds) {
     if (!username || username[0] == '\0') return -1;
@@ -180,4 +186,3 @@ int mfa_get_time_left(const char *username) {
     if (now > e->expires_at) return 0;
     return (int)(e->expires_at - now);
 }
-

@@ -4,38 +4,14 @@
 
 #include "shell.h"
 #include "auth.h"
-#include "operations.h"
 #include "session.h"
 #include "crypto.h"
 
 #define BUF 100
 
-extern unsigned char AES_KEY[32];
-extern unsigned char AES_IV[16];
-
-void decrypt_logs_if_authorized(const char *username, const char *password) {
-    if (strcmp(username, "admin") != 0) {
-        printf("You are not authorized to decrypt logs.\n");
-        return;
-    }
-
-	    extern unsigned char AES_KEY[32];
-	extern unsigned char AES_IV[16];
-
-	if (decrypt_file("audit.enc", "audit_decrypted.log", AES_KEY, AES_IV)) {
-	    printf("Audit log decrypted successfully\n");
-	}
-	if (decrypt_file("session.enc", "session_decrypted.log", AES_KEY, AES_IV)) {
-	    printf("Session log decrypted successfully\n");
-	}
-
-}
-
 int main() {
     char buffer[BUF];
     int choice;
-    //generate_aes_key_iv(AES_KEY, AES_IV);
-    init_aes_key_iv();
 
     while (1) {
         printf("\n----------Login Window----------\n");
@@ -57,6 +33,8 @@ int main() {
                 auto_logout(username, role, 250);
                 virtual_shell(username, role);
                 end_session(username, role);
+                ensure_encrypted("audit.log", "audit.enc");
+		ensure_encrypted("session.log", "session.enc");
             } else {
                 printf("Login failed.\n");
             }

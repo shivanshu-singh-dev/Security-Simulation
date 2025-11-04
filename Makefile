@@ -2,7 +2,7 @@ CC = gcc
 CFLAGS = -Wall -Wextra -std=c11
 
 # 2. Object Files
-OBJ = main.o auth.o acl.o crypto.o shell.o audit.o utils.o operations.o session.o filesystem.o mfa.o
+OBJ = main.o auth.o acl.o crypto.o shell.o audit.o session.o filesystem.o mfa.o
 
 # 3. Output Binary
 TARGET = run

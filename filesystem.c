@@ -12,8 +12,11 @@
 #include "auth.h"
 #include "filesystem.h"
 #include "crypto.h"
+#include "acl.h"
 
-// ---------- Role Permissions ----------
+#define SUPER_FILE "superusers.txt"
+
+
 int can_read(const char *role) {
     return strcmp(role, "admin") == 0 || strcmp(role, "user") == 0 || strcmp(role, "guest") == 0;
 }
@@ -26,23 +29,12 @@ int can_execute(const char *role) {
     return strcmp(role, "admin") == 0;
 }
 
-// ---------- ACL Check ----------
-int acl_allowed(const char *username, const char *filename) {
-    if (strcmp(filename, "session.log") == 0 ||
-        strcmp(filename, "audit.log") == 0 ||
-        strcmp(filename, "users.txt") == 0) {
-        return strcmp(username, "Shivanshu") == 0;
-    }
-    return 1;
-}
 
-// ---------- Unified File Listing ----------
 int list_all_files(char *files[], int max_files) {
     int count = 0;
     DIR *d;
     struct dirent *dir;
 
-    // List Demo/ files
     d = opendir(DEMO);
     if (d) {
         while ((dir = readdir(d)) != NULL && count < max_files) {
@@ -53,8 +45,7 @@ int list_all_files(char *files[], int max_files) {
         closedir(d);
     }
 
-    // Add special ACL files (in ROOT)
-    const char *special[] = {"session.log", "audit.log", "users.txt"};
+    const char *special[] = {"session.log", "audit.log", "users.txt", SUPER_FILE};
     for (int i = 0; i < 3 && count < max_files; i++) {
         files[count++] = strdup(special[i]);
     }
@@ -105,7 +96,7 @@ void filesystem_read(const char *role, const char *username) {
         char ans; scanf(" %c", &ans); flush_input();
         if (ans == 'y' || ans == 'Y') {
             snprintf(tmp, sizeof(tmp), "%s.tmp", filepath);
-            if (decrypt_file(filepath, tmp, AES_KEY, AES_IV) != 0) {
+            if (decrypt_file(filepath, tmp) != 0) {
                 printf("[ERROR] Decryption failed.\n"); goto cleanup;
             }
             decrypted = 1;
@@ -167,11 +158,12 @@ void filesystem_write(const char *role, const char *username) {
         char ans; scanf(" %c", &ans); flush_input();
         if (ans == 'y' || ans == 'Y') {
             snprintf(tmp, sizeof(tmp), "%s.tmp", filepath);
-            if (decrypt_file(filepath, tmp, AES_KEY, AES_IV) != 0) {
+            if (decrypt_file(filepath, tmp) != 0) {
                 printf("[ERROR] Decryption failed.\n"); goto cleanup;
             }
             decrypted = 1;
-        } else {
+        }
+        else {
             printf("Cannot write to encrypted file without decryption.\n"); goto cleanup;
         }
     }
@@ -180,8 +172,11 @@ void filesystem_write(const char *role, const char *username) {
     if (!fp) { printf("Failed to open %s\n", filepath); goto cleanup; }
 
     char input[200];
-    printf("Enter text to append: ");
-    getchar(); fgets(input, sizeof(input), stdin);
+    
+    	printf("Enter text to append: ");
+	fflush(stdin);
+	fgets(input, sizeof(input), stdin);
+	input[strcspn(input, "\n")] = 0;
 
     time_t t = time(NULL);
     fprintf(fp, "[%s] %s", ctime(&t), input);
@@ -189,7 +184,7 @@ void filesystem_write(const char *role, const char *username) {
 
     if (decrypted) {
         char encpath[1024]; snprintf(encpath, sizeof(encpath), "%s", filepath);
-        if (encrypt_file(tmp, encpath, AES_KEY, AES_IV) != 0) {
+        if (encrypt_file(tmp, encpath) != 0) {
             printf("[ERROR] Re-encryption failed!\n");
         }
         remove(tmp);
@@ -243,7 +238,7 @@ void filesystem_exec(const char *role, const char *username) {
         char ans; scanf(" %c", &ans); flush_input();
         if (ans == 'y' || ans == 'Y') {
             snprintf(tmp, sizeof(tmp), "%s.tmp", filepath);
-            if (decrypt_file(filepath, tmp, AES_KEY, AES_IV) != 0) {
+            if (decrypt_file(filepath, tmp) != 0) {
                 printf("[ERROR] Decryption failed.\n"); goto cleanup;
             }
             decrypted = 1;

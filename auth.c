@@ -59,7 +59,7 @@ void hash_password(const char *password, char *output) {
 }
 
 int register_user() {
-    char username[50], password[50], hashed[100];
+    char username[25], password[25], hashed[100];
     char role[10];
     FILE *fp;
 
@@ -222,7 +222,7 @@ int login_user(char *username, char *role) {
                             success = 1;
                             strcpy(role, file_role);
                         } else {
-                            // MFA failed: will write updated counters below and continue outer loop
+                            // MFA failed
                         }
                     } else {
                         // Non-admin: no MFA required
@@ -259,12 +259,11 @@ int login_user(char *username, char *role) {
 
         if (success) {
             printf("Login successful! Role: %s\n", role);
-            // session token / start_session will be done by caller (main)
+            // session token / start_session will be called by (main)
             log_event(username, role, "Login", "Success", NULL);
             return 1;
         }
         if (locked) return 0;
-        // Otherwise loop to prompt password again
     }
 }
 
