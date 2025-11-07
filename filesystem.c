@@ -27,7 +27,7 @@ int can_write(const char *role) {
 }
 
 int can_execute(const char *role) {
-    return strcmp(role, "admin") == 0;
+    return strcmp(role, "admin") == 0 || strcmp(role, "user") == 0 || strcmp(role, "guest") == 0;
 }
 
 int list_all_files(char *files[], int max_files) {
@@ -46,11 +46,10 @@ int list_all_files(char *files[], int max_files) {
         closedir(d);
     }
 
-    // Always include the special files from root directory if they exist
     const char *special[] = {"session.log", "audit.log", "users.txt", "superusers.txt", 
                             "session.enc", "audit.enc"};
     for (int i = 0; i < 6 && count < max_files; i++) {
-        // Check if file exists before adding
+
         if (access(special[i], F_OK) == 0) {
             files[count++] = strdup(special[i]);
         }
@@ -58,7 +57,8 @@ int list_all_files(char *files[], int max_files) {
 
     return count;
 }
-// ---------- Read ----------
+
+
 void filesystem_read(const char *role, const char *username) {
     if (!can_read(role)) {
         printf("Permission Denied: You cannot read files.\n");
@@ -84,7 +84,7 @@ void filesystem_read(const char *role, const char *username) {
     }
 
     char filepath[1024];
-    // Special files are in root directory (both plain and encrypted versions)
+
     if (strcmp(fname, "session.log") == 0 ||
         strcmp(fname, "audit.log") == 0 ||
         strcmp(fname, "users.txt") == 0 ||
@@ -132,7 +132,7 @@ cleanup:
     for (int i = 0; i < count; i++) free(files[i]);
 }
 
-// ---------- Write ----------
+
 void filesystem_write(const char *role, const char *username) {
     if (!can_write(role)) { printf("Permission Denied: You cannot write files.\n"); return; }
 
@@ -153,7 +153,6 @@ void filesystem_write(const char *role, const char *username) {
     }
 
     char filepath[1024];
-	// Special files are in root directory (both plain and encrypted versions)
 	if (strcmp(fname, "session.log") == 0 ||
 	    strcmp(fname, "audit.log") == 0 ||
 	    strcmp(fname, "users.txt") == 0 ||
@@ -211,7 +210,7 @@ cleanup:
     for (int i = 0; i < count; i++) free(files[i]);
 }
 
-// ---------- Execute ----------
+
 void filesystem_exec(const char *role, const char *username) {
     if (!can_execute(role)) { printf("Permission Denied: You cannot execute files.\n"); return; }
 
@@ -236,7 +235,7 @@ void filesystem_exec(const char *role, const char *username) {
     }
 
     char filepath[1024];
-	// Special files are in root directory (both plain and encrypted versions)
+
 	if (strcmp(fname, "session.log") == 0 ||
 	    strcmp(fname, "audit.log") == 0 ||
 	    strcmp(fname, "users.txt") == 0 ||

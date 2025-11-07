@@ -105,7 +105,7 @@ int mfa_generate(const char *username, int expiry_seconds) {
     mfa_entry_t *e = find_entry(username);
     if (!e) {
         e = allocate_entry();
-        if (!e) return -1; // table full
+        if (!e) return -1; 
     }
 
     strncpy(e->username, username, sizeof(e->username)-1);
@@ -126,33 +126,34 @@ int mfa_verify(const char *username, int code) {
     mfa_init_if_needed();
 
     mfa_entry_t *e = find_entry(username);
-    if (!e) return -1; // no entry
+    if (!e) return -1; 
 
     time_t now = time(NULL);
     if (now > e->expires_at) {
         remove_code_file(username);
         e->used = 0;
-        return -1; // expired
+        return -1; 
     }
 
     if (e->attempts_left <= 0) {
         remove_code_file(username);
         e->used = 0;
-        return -2; // locked
+        return -2; 
     }
 
     if (e->code == code) {
         remove_code_file(username);
         e->used = 0;
-        return 1; // success
-    } else {
+        return 1;
+    }
+    else {
         e->attempts_left--;
         if (e->attempts_left <= 0) {
             remove_code_file(username);
             e->used = 0;
-            return -2; // locked
+            return -2;
         }
-        return 0; // wrong code
+        return 0;
     }
 }
 

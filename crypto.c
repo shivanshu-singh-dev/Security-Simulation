@@ -104,7 +104,7 @@ int decrypt_file(const char *infile, const char *outfile) {
     }
 
     if (!EVP_DecryptFinal_ex(ctx, outbuf, &outlen)) {
-        fprintf(stderr, "❌ Decryption failed (wrong key or corrupted file).\n");
+        fprintf(stderr, "Decryption failed (wrong key or corrupted file).\n");
         EVP_CIPHER_CTX_free(ctx);
         fclose(in);
         fclose(out);
@@ -133,13 +133,12 @@ int ensure_decrypted(const char *logfile, const char *encfile) {
             return -1;
         }
     }
-    return 0; // Already plaintext
+    return 0;
 }
 
 int ensure_encrypted(const char *logfile, const char *encfile) {
     struct stat s_plain;
     if (stat(logfile, &s_plain) == 0) {
-        // Plain exists, encrypt and remove
         if (encrypt_file(logfile, encfile) == 0) {
             remove(logfile);
             return 0;

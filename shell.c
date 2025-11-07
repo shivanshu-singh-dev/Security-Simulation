@@ -26,7 +26,7 @@ void operations_interface(const char *role) {
         printf("Permissions: Read ✅, Write ✅, Execute ✅, Delete ❌, Create ❌, Encrypt ❌, Decrypt ❌\n");
     }
     else if (strcmp(role, "guest") == 0) {
-        printf("Permissions: Read ✅, Write ❌, Execute ✅, Delete ❌, Create ❌, Encrypt ❌, Decrypt ❌\n");
+        printf("Permissions: Read ✅, Write ❌, Execute ✅, Delete ❌, Create ❌\n");
     }
     else {
         printf("Unknown role. No permissions assigned.\n");
@@ -58,9 +58,11 @@ void virtual_shell(const char *username, const char *role) {
             printf("  execute  → Execute operation\n");
             printf("  delete   → Delete file\n");
             printf("  create   → Create new file\n");
-            printf("  super    → Add a new superuser\n");
-            printf("  encrypt  → Encrypt a file (admins/superusers)\n");
-            printf("  decrypt  → Decrypt a file (admins/superusers)\n");
+            if(strcmp(role, "admin") == 0){ 
+		    printf("  super    → Add a new superuser\n");
+		    printf("  encrypt  → Encrypt a file \n");
+		    printf("  decrypt  → Decrypt a file \n");
+            }
             printf("  help     → Show this help menu\n");
             printf("  exit     → Logout shell\n");
         }
@@ -152,7 +154,7 @@ void virtual_shell(const char *username, const char *role) {
 		if (strcmp(files[i], "users.txt") == 0 ||
 		    strcmp(files[i], "superusers.txt") == 0) continue;
 
-		// Check if encrypted version already exists
+
 		char encver[512];
 		if (strcmp(files[i], "session.log") == 0) {
 		    snprintf(encver, sizeof(encver), "session.enc");
@@ -259,7 +261,7 @@ void virtual_shell(const char *username, const char *role) {
 		else if (strstr(files[i], ".log.enc") != NULL) {
 		    char *dot = strstr(base, ".log.enc");
 		    if (dot) *dot = '\0';
-		    strcat(base, ".log"); // Add .log back to base name
+		    strcat(base, ".log");
 		    is_encrypted = 1;
 		}
 
@@ -309,7 +311,6 @@ void virtual_shell(const char *username, const char *role) {
 	    char *encname = files[ map_idx[choice - 1] ];
 	    char infile[512], tmpfile[512];
 	    
-	    // Handle both naming conventions
 	    if (strcmp(encname, "session.enc") == 0 || 
 		strcmp(encname, "audit.enc") == 0 ||
 		strcmp(encname, "session.log.enc") == 0 || 
@@ -324,7 +325,6 @@ void virtual_shell(const char *username, const char *role) {
 	    char base[512];
 	    strncpy(base, encname, sizeof(base));
 	    
-	    // Convert encrypted name back to original name
 	    if (strcmp(encname, "session.enc") == 0) {
 		strcpy(base, "session.log");
 	    } else if (strcmp(encname, "audit.enc") == 0) {
@@ -338,7 +338,6 @@ void virtual_shell(const char *username, const char *role) {
 		if (dot) *dot = '\0';
 	    }
 	    
-	    // Special decrypted files go to root directory
 	    if (strcmp(base, "session.log") == 0 || 
 		strcmp(base, "audit.log") == 0 ||
 		strcmp(base, "users.txt") == 0 ||
@@ -351,7 +350,7 @@ void virtual_shell(const char *username, const char *role) {
 	    if (decrypt_file(infile, tmpfile) == 0) {
 		remove(infile);
 		char outfile[512];
-		// Special files go to root directory
+
 		if (strcmp(base, "session.log") == 0 || 
 		    strcmp(base, "audit.log") == 0 ||
 		    strcmp(base, "users.txt") == 0 ||
@@ -405,7 +404,7 @@ void virtual_shell(const char *username, const char *role) {
             if (choice < 1 || choice > count) { printf("Invalid choice.\n"); continue; }
 
             char filepath[512];
-            // Special files are in root directory
+
             if (strcmp(files[choice - 1], "session.log") == 0 || 
                 strcmp(files[choice - 1], "audit.log") == 0 ||
                 strcmp(files[choice - 1], "users.txt") == 0 ||
@@ -432,7 +431,7 @@ void virtual_shell(const char *username, const char *role) {
             filename[strcspn(filename, "\n")] = 0;
 
             char filepath[512];
-            // Only create in Demo directory, not root
+
             snprintf(filepath, sizeof(filepath), "%s%s", DEMO, filename);
             FILE *fp = fopen(filepath, "w");
             if (!fp) { perror("Failed to create file"); continue; }

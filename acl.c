@@ -16,8 +16,8 @@ int check_permission(const char *role, const char *action) {
     }
 
     if (strcmp(role, "guest") == 0) {
-        if (strcmp(action, "read") == 0) return 1;
         if (strcmp(action, "execute") == 0) return 1;
+        if (strcmp(action, "read") == 0) return 1;
         return 0;
     }
 
