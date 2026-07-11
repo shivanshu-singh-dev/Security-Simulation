@@ -182,11 +182,11 @@ void virtual_shell(const char *username, const char *role) {
 	    printf("Choose a file number to encrypt: ");
 	    if (scanf("%d", &choice) != 1) {
 		printf("Invalid input.\n");
-		while (getchar() != '\n');
+		int c; while ((c = getchar()) != '\n' && c != EOF);
 		for (int i = 0; i < count; ++i) free(files[i]);
 		continue;
 	    }
-	    while (getchar() != '\n');
+	    { int c; while ((c = getchar()) != '\n' && c != EOF); }
 
 	    if (choice < 1 || choice > shown) {
 		printf("Invalid choice.\n");
@@ -296,11 +296,11 @@ void virtual_shell(const char *username, const char *role) {
 	    printf("Choose a file number to decrypt: ");
 	    if (scanf("%d", &choice) != 1) {
 		printf("Invalid input.\n");
-		while (getchar() != '\n');
+		int c; while ((c = getchar()) != '\n' && c != EOF);
 		for (int i = 0; i < count; ++i) free(files[i]);
 		continue;
 	    }
-	    while (getchar() != '\n');
+	    { int c; while ((c = getchar()) != '\n' && c != EOF); }
 
 	    if (choice < 1 || choice > shown) {
 		printf("Invalid choice.\n");
@@ -400,8 +400,19 @@ void virtual_shell(const char *username, const char *role) {
 
             int choice;
             printf("Enter file number to delete: ");
-            scanf("%d", &choice); while (getchar() != '\n');
-            if (choice < 1 || choice > count) { printf("Invalid choice.\n"); continue; }
+            if (scanf("%d", &choice) != 1) {
+                printf("Invalid input.\n");
+                int c; while ((c = getchar()) != '\n' && c != EOF);
+                for (int i = 0; i < count; i++) free(files[i]);
+                continue;
+            }
+            { int c; while ((c = getchar()) != '\n' && c != EOF); }
+
+            if (choice < 1 || choice > count) {
+                printf("Invalid choice.\n");
+                for (int i = 0; i < count; i++) free(files[i]);
+                continue;
+            }
 
             char filepath[512];
 
@@ -417,6 +428,8 @@ void virtual_shell(const char *username, const char *role) {
                 printf("File '%s' deleted successfully.\n", files[choice - 1]);
             else
                 perror("Failed to delete file");
+
+            for (int i = 0; i < count; i++) free(files[i]);
         }
 
         else if (strcmp(cmd, "create") == 0) {
@@ -429,6 +442,11 @@ void virtual_shell(const char *username, const char *role) {
             printf("Enter filename to create: ");
             fgets(filename, sizeof(filename), stdin);
             filename[strcspn(filename, "\n")] = 0;
+
+            if (strstr(filename, "..") != NULL || strchr(filename, '/') != NULL || strchr(filename, '\\') != NULL) {
+                printf("[DENIED] Path traversal attempt detected.\n");
+                continue;
+            }
 
             char filepath[512];
 

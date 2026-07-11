@@ -1,9 +1,12 @@
 #include <stdlib.h>
-#include <openssl/sha.h>
+#include "sha256.h"
 #include <signal.h>
 #include <string.h>
 #include <stdio.h>
 #include <unistd.h>
+#ifdef _WIN32
+#include <windows.h>
+#endif
 #include <time.h>
 #include "session.h"
 #include "audit.h"
@@ -107,6 +110,28 @@ static void timeout_handler(int sig) {
     exit(0);
 }
 
+#ifdef _WIN32
+static DWORD WINAPI win_timeout_thread(LPVOID lpParam) {
+    int timeout = *(int*)lpParam;
+    free(lpParam);
+    Sleep(timeout * 1000);
+    timeout_handler(0);
+    return 0;
+}
+
+void auto_logout(const char *username, const char *role, int timeout) {
+    strncpy(current_user, username, sizeof(current_user)-1);
+    strncpy(current_role, role, sizeof(current_role)-1);
+    current_user[sizeof(current_user)-1] = '\0';
+    current_role[sizeof(current_role)-1] = '\0';
+
+    int *timeout_val = malloc(sizeof(int));
+    if (timeout_val) {
+        *timeout_val = timeout;
+        CreateThread(NULL, 0, win_timeout_thread, timeout_val, 0, NULL);
+    }
+}
+#else
 void auto_logout(const char *username, const char *role, int timeout) {
     strncpy(current_user, username, sizeof(current_user)-1);
     strncpy(current_role, role, sizeof(current_role)-1);
@@ -116,4 +141,5 @@ void auto_logout(const char *username, const char *role, int timeout) {
     signal(SIGALRM, timeout_handler);
     alarm(timeout);
 }
+#endif
 

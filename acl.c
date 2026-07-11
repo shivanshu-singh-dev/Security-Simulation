@@ -45,7 +45,8 @@ int superuser(const char *username) {
 int acl_allowed(const char *username, const char *filename) {
     if (strcmp(filename, "session.log") == 0 ||
         strcmp(filename, "audit.log") == 0 ||
-        strcmp(filename, "users.txt") == 0) {
+        strcmp(filename, "users.txt") == 0 ||
+        strcmp(filename, "superusers.txt") == 0) {
         return superuser(username);
     }
     return 1;

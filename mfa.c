@@ -9,6 +9,13 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
+#ifdef _WIN32
+#include <direct.h>
+#include <process.h>
+#define mkdir(path, mode) _mkdir(path)
+#define getpid() _getpid()
+#endif
+
 #define MFA_DIR "MFA"                 
 #define MFA_FILE_FMT MFA_DIR "/mfa_%s.txt"
 #define MAX_USERS 64

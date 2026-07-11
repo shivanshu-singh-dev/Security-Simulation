@@ -3,12 +3,18 @@
 #define DEMO "Demo/"
 #define ROOT "./"
 
+#ifdef _WIN32
+char *_strdup(const char *);
+#define strdup _strdup
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <dirent.h>
 #include <time.h>
 #include <unistd.h>
+#include <sys/stat.h>
 
 #include "auth.h"
 #include "filesystem.h"
@@ -39,7 +45,13 @@ int list_all_files(char *files[], int max_files) {
     d = opendir(DEMO);
     if (d) {
         while ((dir = readdir(d)) != NULL && count < max_files) {
-            if (dir->d_type == DT_REG) {
+            if (strcmp(dir->d_name, ".") == 0 || strcmp(dir->d_name, "..") == 0) {
+                continue;
+            }
+            char path[1024];
+            snprintf(path, sizeof(path), "%s%s", DEMO, dir->d_name);
+            struct stat st;
+            if (stat(path, &st) == 0 && S_ISREG(st.st_mode)) {
                 files[count++] = strdup(dir->d_name);
             }
         }
@@ -49,7 +61,6 @@ int list_all_files(char *files[], int max_files) {
     const char *special[] = {"session.log", "audit.log", "users.txt", "superusers.txt", 
                             "session.enc", "audit.enc"};
     for (int i = 0; i < 6 && count < max_files; i++) {
-
         if (access(special[i], F_OK) == 0) {
             files[count++] = strdup(special[i]);
         }
@@ -265,12 +276,41 @@ void filesystem_exec(const char *role, const char *username) {
     const char *ext = strrchr(fname, '.');
     if (ext) {
         char *cmd = NULL, *exe = NULL;
+        const char *src = decrypted ? tmp : filepath;
 
-        if (strcmp(ext, ".sh") == 0) asprintf(&cmd, "bash %s", decrypted ? tmp : filepath);
-        else if (strcmp(ext, ".py") == 0) asprintf(&cmd, "python3 %s", decrypted ? tmp : filepath);
+        if (strcmp(ext, ".sh") == 0) {
+            size_t len = strlen("bash ") + strlen(src) + 1;
+            cmd = malloc(len);
+            if (cmd) snprintf(cmd, len, "bash %s", src);
+        }
+        else if (strcmp(ext, ".py") == 0) {
+#ifdef _WIN32
+            const char *py_bin = "python";
+#else
+            const char *py_bin = "python3";
+#endif
+            size_t len = strlen(py_bin) + 1 + strlen(src) + 1;
+            cmd = malloc(len);
+            if (cmd) snprintf(cmd, len, "%s %s", py_bin, src);
+        }
         else if (strcmp(ext, ".c") == 0) {
-            asprintf(&exe, "%s_exec", fname);
-            asprintf(&cmd, "gcc %s -o %s && ./%s", decrypted ? tmp : filepath, exe, exe);
+#ifdef _WIN32
+            size_t exe_len = strlen(fname) + strlen("_exec.exe") + 1;
+            exe = malloc(exe_len);
+            if (exe) snprintf(exe, exe_len, "%s_exec.exe", fname);
+
+            size_t len = strlen("gcc  -o  && ") + strlen(src) + strlen(exe) * 2 + 1;
+            cmd = malloc(len);
+            if (cmd && exe) snprintf(cmd, len, "gcc %s -o %s && %s", src, exe, exe);
+#else
+            size_t exe_len = strlen(fname) + strlen("_exec") + 1;
+            exe = malloc(exe_len);
+            if (exe) snprintf(exe, exe_len, "%s_exec", fname);
+
+            size_t len = strlen("gcc  -o  && ./%s") + strlen(src) + strlen(exe) * 2 + 1;
+            cmd = malloc(len);
+            if (cmd && exe) snprintf(cmd, len, "gcc %s -o %s && ./%s", src, exe, exe);
+#endif
         }
 
         if (cmd) { system(cmd); free(cmd); }

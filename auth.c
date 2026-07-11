@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <openssl/sha.h>
+#include "sha256.h"
 #include <sys/types.h>
 
 #include "auth.h"
@@ -10,14 +10,33 @@
 
 #define USERS "users.txt"
 
+#ifdef _WIN32
+#include <conio.h>
+#else
 #include <termios.h>
 #include <unistd.h>
+#endif
 
 
 // Password Masking
 void get_password(char *password, int max_len) {
-    struct termios oldt, newt;
     int i = 0;
+#ifdef _WIN32
+    char ch;
+    while (i < max_len - 1) {
+        ch = _getch();
+        if (ch == '\r' || ch == '\n') {
+            break;
+        } else if (ch == '\b') {
+            if (i > 0) {
+                i--;
+            }
+        } else {
+            password[i++] = ch;
+        }
+    }
+#else
+    struct termios oldt, newt;
     char ch;
 
     tcgetattr(STDIN_FILENO, &oldt);
@@ -27,12 +46,18 @@ void get_password(char *password, int max_len) {
     tcsetattr(STDIN_FILENO, TCSANOW, &newt);
 
     while (i < max_len - 1 && read(STDIN_FILENO, &ch, 1) == 1 && ch != '\n') {
-        password[i++] = ch;
+        if (ch == 127 || ch == '\b') {
+            if (i > 0) {
+                i--;
+            }
+        } else {
+            password[i++] = ch;
+        }
     }
-    password[i] = '\0';
 
     tcsetattr(STDIN_FILENO, TCSANOW, &oldt);
-
+#endif
+    password[i] = '\0';
     printf("\n");
 }
 
@@ -59,19 +84,35 @@ void hash_password(const char *password, char *output) {
     output[64] = '\0';
 }
 
+static int is_valid_username(const char *username) {
+    size_t len = strlen(username);
+    if (len == 0 || len >= 25) return 0;
+    for (size_t i = 0; i < len; i++) {
+        char c = username[i];
+        if (!((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '_' || c == '-')) {
+            return 0;
+        }
+    }
+    return 1;
+}
+
 int register_user() {
     char username[25], password[25], hashed[100];
     char role[10];
     FILE *fp;
 
     printf("Enter username: ");
-    scanf("%49s", username);
+    scanf("%24s", username);
     flush_input();
+
+    if (!is_valid_username(username)) {
+        printf("Invalid username. Only alphanumeric characters, underscores, and hyphens are allowed.\n");
+        return 0;
+    }
 
     printf("Enter password: ");
     fflush(stdout);
     get_password(password, sizeof(password));
-    flush_input();
 
     hash_password(password, hashed);
 
@@ -106,6 +147,11 @@ int login_user(char *username, char *role) {
     scanf("%49s", username);
     int c; while ((c = getchar()) != '\n' && c != EOF) {}
 
+    if (!is_valid_username(username)) {
+        printf("Invalid username.\n");
+        return 0;
+    }
+
     while (1) {
         printf("Enter password: ");
         fflush(stdout);
@@ -115,7 +161,12 @@ int login_user(char *username, char *role) {
         FILE *fp = fopen(USERS, "r+");
         if (!fp) { perror("Error opening user file"); return 0; }
 
-        FILE *temp = tmpfile();
+        FILE *temp = fopen("users.tmp", "w+");
+        if (!temp) {
+            perror("Error opening temporary user file");
+            fclose(fp);
+            return 0;
+        }
         int found = 0, success = 0;
 
         while (fscanf(fp, "%49[^:]:%64[^:]:%9[^:]:%d:%d\n",
@@ -253,6 +304,7 @@ int login_user(char *username, char *role) {
         int ch; while ((ch = fgetc(temp)) != EOF) fputc(ch, fp);
 
         fclose(fp); fclose(temp);
+        remove("users.tmp");
 
         if (!found) {
             printf("User not found.\n");

@@ -35,4 +35,5 @@ void log_event(const char *username, const char *role,
     fprintf(fp, "[%s] User: %s | Role: %s | Token: %s | Action: %s | Status: %s\n",
             ts, username, role, token_to_print, action, status);
     fclose(fp);
+    ensure_encrypted(AUDIT_LOG, AUDIT_ENC);
 }
